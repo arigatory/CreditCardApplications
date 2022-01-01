@@ -4,8 +4,4 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="FrequentFlyerNumberValidator.cs" />
-    <Compile Remove="IFrequentFlyerNumberValidator.cs" />
-  </ItemGroup>
 </Project>
