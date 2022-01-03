@@ -2,6 +2,7 @@ using System;
 using Xunit;
 using Moq;
 using System.Collections.Generic;
+using Moq.Protected;
 
 namespace CreditCardApplications.Tests
 {
@@ -322,6 +323,27 @@ namespace CreditCardApplications.Tests
 
             Assert.Equal(new List<string> { "aa", "bb", "cc" }, frequentFlyerNumberPassed);
             
+        }
+
+        [Fact]
+        public void ReferFraudRisk()
+        {
+            Mock<IFrequentFlyerNumberValidator> mockValidator = new Mock<IFrequentFlyerNumberValidator>();
+
+            Mock<FraudLookup> mockFlaudLookup = new Mock<FraudLookup>();
+            //mockFlaudLookup.Setup(x => x.IsFraudRisk(It.IsAny<CreditCardApplication>())).Returns(true);
+
+            mockFlaudLookup.Protected()
+                .Setup<bool>("CheckApplication", ItExpr.IsAny<CreditCardApplication>())
+                .Returns(true);
+
+            var sut = new CreditCardApplicationEvaluator(mockValidator.Object, mockFlaudLookup.Object);
+
+            var application = new CreditCardApplication();
+            
+            CreditCardApplicationDecision decision = sut.Evaluate(application);
+
+            Assert.Equal(CreditCardApplicationDecision.ReferredToHumanFraudRisk, decision);
         }
 
     }
