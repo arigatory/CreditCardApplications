@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using Moq;
+using System.Collections.Generic;
 
 namespace CreditCardApplications.Tests
 {
@@ -275,6 +276,52 @@ namespace CreditCardApplications.Tests
             //mockValidator.Raise(x => x.ValidatorLookupPerformed += null, EventArgs.Empty);
 
             Assert.Equal(1, sut.ValidatorLookupCount);
+        }
+
+        [Fact]
+        public void ReferInvalidFrequentFlyerApplications_ReturnValuesSequence()
+        {
+            var mockValidator = new Mock<IFrequentFlyerNumberValidator>();
+            mockValidator.Setup(x => x.ServiceInformation.License.LicenseKey).Returns("OK");
+
+            mockValidator.SetupSequence(x => x.IsValid(It.IsAny<string>()))
+                .Returns(false)
+                .Returns(true);
+
+            var sut = new CreditCardApplicationEvaluator(mockValidator.Object);
+
+            var application = new CreditCardApplication { Age = 25 };
+
+            CreditCardApplicationDecision firstDecision = sut.Evaluate(application);
+            Assert.Equal(CreditCardApplicationDecision.ReferredToHuman, firstDecision);
+
+
+            CreditCardApplicationDecision secondDecision = sut.Evaluate(application);
+            Assert.Equal(CreditCardApplicationDecision.AutoDeclined, secondDecision);
+        }
+
+        [Fact]
+        public void ReferInvalidFrequentFlyerApplications_MultipleCallsSequence()
+        {
+            var mockValidator = new Mock<IFrequentFlyerNumberValidator>();
+            mockValidator.Setup(x => x.ServiceInformation.License.LicenseKey).Returns("OK");
+
+            var frequentFlyerNumberPassed = new List<string>();
+            mockValidator.Setup(x => x.IsValid(Capture.In(frequentFlyerNumberPassed)));
+
+            var sut = new CreditCardApplicationEvaluator(mockValidator.Object);
+
+            var application1 = new CreditCardApplication { Age = 25, FrequentFlyerNumber = "aa" };
+            var application2 = new CreditCardApplication { Age = 25, FrequentFlyerNumber = "bb" };
+            var application3 = new CreditCardApplication { Age = 25, FrequentFlyerNumber = "cc" };
+
+
+            sut.Evaluate(application1);
+            sut.Evaluate(application2);
+            sut.Evaluate(application3);
+
+            Assert.Equal(new List<string> { "aa", "bb", "cc" }, frequentFlyerNumberPassed);
+            
         }
 
     }
